@@ -19,13 +19,24 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
-    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("com.google.genai:google-genai:1.42.0")
 }
 
 tasks {
     shadowJar {
         archiveClassifier.set("")
-        relocate("com.google.gson", "com.mcgpt.libs.gson")
+        relocate("com.google.genai", "com.mcgpt.libs.genai")
+        relocate("com.fasterxml.jackson", "com.mcgpt.libs.jackson")
+        relocate("com.google.common", "com.mcgpt.libs.guava")
+        relocate("com.google.auth", "com.mcgpt.libs.auth")
+        relocate("com.google.api", "com.mcgpt.libs.api")
+        relocate("okhttp3", "com.mcgpt.libs.okhttp3")
+        relocate("okio", "com.mcgpt.libs.okio")
+        relocate("com.google.protobuf", "com.mcgpt.libs.protobuf")
+        relocate("org.java_websocket", "com.mcgpt.libs.websocket")
+        relocate("kotlin", "com.mcgpt.libs.kotlin")
+        relocate("org.jetbrains", "com.mcgpt.libs.jetbrains")
+        relocate("org.slf4j", "com.mcgpt.libs.slf4j")
     }
 
     compileJava {

@@ -1,32 +1,32 @@
 package com.mcgpt.api;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.genai.Client;
+import com.google.genai.types.Content;
+import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.HttpOptions;
+import com.google.genai.types.Part;
 import com.mcgpt.config.ConfigManager;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 public class GeminiClient {
 
-    private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
     private static final String CONTEXT_ACK_TEXT = "Understood.";
 
     private final ConfigManager config;
     private final Logger logger;
-    private final HttpClient httpClient;
+    private final Client client;
 
     public GeminiClient(ConfigManager config, Logger logger) {
         this.config = config;
         this.logger = logger;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(config.getTimeoutSeconds()))
+        this.client = Client.builder()
+                .apiKey(config.getGeminiApiKey())
+                .httpOptions(HttpOptions.builder().timeout(config.getTimeoutSeconds() * 1000).build())
                 .build();
     }
 
@@ -38,117 +38,48 @@ public class GeminiClient {
      * @return CompletableFuture resolving to the AI reply text
      */
     public CompletableFuture<String> ask(String userMessage, String context) {
-        String apiKey = config.getGeminiApiKey();
-        String url = API_URL + config.getModel() + ":generateContent?key=" + apiKey;
-
-        JsonObject body = buildRequestBody(userMessage, context);
-        String requestJson = body.toString();
-
-        if (config.isEnableLogging()) {
-            logger.info("[McGPT] Sending request to Gemini: " + requestJson);
-        }
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(config.getTimeoutSeconds()))
-                .POST(HttpRequest.BodyPublishers.ofString(requestJson))
+        GenerateContentConfig genConfig = GenerateContentConfig.builder()
+                .systemInstruction(Content.fromParts(Part.fromText(config.getSystemPrompt())))
+                .temperature((float) config.getTemperature())
+                .maxOutputTokens(config.getMaxTokens())
                 .build();
 
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> {
-                    if (config.isEnableLogging()) {
-                        logger.info("[McGPT] Gemini response status: " + response.statusCode());
-                        logger.info("[McGPT] Gemini response body: " + response.body());
-                    }
-                    if (response.statusCode() != 200) {
-                        String errorDetail = switch (response.statusCode()) {
-                            case 400 -> "Bad request. Check your model name or request format.";
-                            case 401, 403 -> "Invalid or missing API key. Check your GEMINI_API_KEY.";
-                            case 429 -> "Gemini rate limit exceeded. Please wait before trying again.";
-                            case 500, 502, 503 -> "Gemini service is temporarily unavailable.";
-                            default -> "HTTP " + response.statusCode();
-                        };
-                        logger.warning("[McGPT] Gemini API error (" + response.statusCode()
-                                + "): " + errorDetail + " | Body: " + response.body());
-                        throw new RuntimeException("API error: " + errorDetail);
-                    }
-                    return parseReply(response.body());
-                });
-    }
-
-    private JsonObject buildRequestBody(String userMessage, String context) {
-        JsonObject body = new JsonObject();
-
-        // System instruction
-        JsonObject systemInstruction = new JsonObject();
-        JsonArray systemParts = new JsonArray();
-        JsonObject systemPart = new JsonObject();
-        systemPart.addProperty("text", config.getSystemPrompt());
-        systemParts.add(systemPart);
-        systemInstruction.add("parts", systemParts);
-        body.add("systemInstruction", systemInstruction);
-
-        // Contents array
-        JsonArray contents = new JsonArray();
-
-        // Context if provided
-        if (context != null && !context.isBlank()) {
-            JsonObject contextMsg = new JsonObject();
-            contextMsg.addProperty("role", "user");
-            JsonArray contextParts = new JsonArray();
-            JsonObject contextPart = new JsonObject();
-            contextPart.addProperty("text", "Recent chat context:\n" + context);
-            contextParts.add(contextPart);
-            contextMsg.add("parts", contextParts);
-            contents.add(contextMsg);
-
-            // Placeholder model response to maintain valid alternating turn structure
-            JsonObject contextAck = new JsonObject();
-            contextAck.addProperty("role", "model");
-            JsonArray ackParts = new JsonArray();
-            JsonObject ackPart = new JsonObject();
-            ackPart.addProperty("text", CONTEXT_ACK_TEXT);
-            ackParts.add(ackPart);
-            contextAck.add("parts", ackParts);
-            contents.add(contextAck);
+        if (config.isEnableLogging()) {
+            logger.info("[McGPT] Sending request to Gemini model: " + config.getModel());
         }
 
-        // User message
-        JsonObject userMsg = new JsonObject();
-        userMsg.addProperty("role", "user");
-        JsonArray userParts = new JsonArray();
-        JsonObject userPart = new JsonObject();
-        userPart.addProperty("text", userMessage);
-        userParts.add(userPart);
-        userMsg.add("parts", userParts);
-        contents.add(userMsg);
+        CompletableFuture<GenerateContentResponse> responseFuture;
 
-        body.add("contents", contents);
+        if (context != null && !context.isBlank()) {
+            // Multi-turn: include context as preceding conversation turns
+            List<Content> contents = new ArrayList<>();
+            contents.add(Content.builder()
+                    .role("user")
+                    .parts(Part.fromText("Recent chat context:\n" + context))
+                    .build());
+            contents.add(Content.builder()
+                    .role("model")
+                    .parts(Part.fromText(CONTEXT_ACK_TEXT))
+                    .build());
+            contents.add(Content.fromParts(Part.fromText(userMessage)));
+            responseFuture = client.async.models.generateContent(config.getModel(), contents, genConfig);
+        } else {
+            responseFuture = client.async.models.generateContent(config.getModel(), userMessage, genConfig);
+        }
 
-        // Generation config
-        JsonObject generationConfig = new JsonObject();
-        generationConfig.addProperty("temperature", config.getTemperature());
-        generationConfig.addProperty("maxOutputTokens", config.getMaxTokens());
-        body.add("generationConfig", generationConfig);
-
-        return body;
-    }
-
-    private String parseReply(String responseBody) {
-        try {
-            JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
-            JsonArray candidates = json.getAsJsonArray("candidates");
-            if (candidates == null || candidates.isEmpty()) {
+        return responseFuture.thenApply(response -> {
+            if (config.isEnableLogging()) {
+                logger.info("[McGPT] Gemini response received.");
+            }
+            String text = response.text();
+            if (text == null || text.isBlank()) {
                 return "No response from AI.";
             }
-            JsonObject firstCandidate = candidates.get(0).getAsJsonObject();
-            JsonObject content = firstCandidate.getAsJsonObject("content");
-            JsonArray parts = content.getAsJsonArray("parts");
-            return parts.get(0).getAsJsonObject().get("text").getAsString();
-        } catch (Exception e) {
-            logger.warning("[McGPT] Failed to parse Gemini response: " + e.getMessage());
-            return "Error parsing AI response.";
-        }
+            return text;
+        }).exceptionally(ex -> {
+            Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+            logger.warning("[McGPT] Gemini API error: " + cause.getMessage());
+            throw new RuntimeException("Gemini API error: " + cause.getMessage(), cause);
+        });
     }
 }
