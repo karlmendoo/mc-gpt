@@ -1,6 +1,7 @@
 package com.mcgpt.command;
 
 import com.mcgpt.McgptPlugin;
+import java.util.Collections;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -43,7 +44,7 @@ public class AiCommand implements CommandExecutor {
             // Allow console use
             String message = String.join(" ", args);
             plugin.getLogger().info("[McGPT] Console requested AI: " + message);
-            plugin.getGeminiClient().ask(message, "").thenAccept(reply -> {
+            plugin.getGeminiClient().ask(message, Collections.emptyList(), "").thenAccept(reply -> {
                 String cleaned = plugin.cleanReply(reply);
                 plugin.getLogger().info("[McGPT] AI reply: " + cleaned);
             }).exceptionally(ex -> {
