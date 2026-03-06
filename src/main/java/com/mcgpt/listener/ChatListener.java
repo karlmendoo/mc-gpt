@@ -33,6 +33,10 @@ public class ChatListener implements Listener {
         // Cancel the chat event so the raw trigger isn't shown in public chat
         event.setCancelled(true);
 
+        // Show the player their own message since the chat event is cancelled
+        event.getPlayer().sendMessage(net.kyori.adventure.text.Component.text(
+                "<" + event.getPlayer().getName() + "> " + plainText));
+
         // Extract the message part after the keyword
         String message = plainText.substring(keyword.length()).trim();
         if (message.isEmpty()) {
