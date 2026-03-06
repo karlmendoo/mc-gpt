@@ -43,7 +43,7 @@ public class AiCommand implements CommandExecutor {
             // Allow console use
             String message = String.join(" ", args);
             plugin.getLogger().info("[McGPT] Console requested AI: " + message);
-            plugin.getOpenAIClient().ask(message, "").thenAccept(reply -> {
+            plugin.getGeminiClient().ask(message, "").thenAccept(reply -> {
                 String cleaned = plugin.cleanReply(reply);
                 plugin.getLogger().info("[McGPT] AI reply: " + cleaned);
             }).exceptionally(ex -> {

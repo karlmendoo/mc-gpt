@@ -1,6 +1,6 @@
 package com.mcgpt;
 
-import com.mcgpt.api.OpenAIClient;
+import com.mcgpt.api.GeminiClient;
 import com.mcgpt.command.AiCommand;
 import com.mcgpt.config.ConfigManager;
 import com.mcgpt.listener.ChatListener;
@@ -20,18 +20,18 @@ public class McgptPlugin extends JavaPlugin {
     private ConfigManager configManager;
     private CooldownManager cooldownManager;
     private ChatContextManager chatContextManager;
-    private OpenAIClient openAIClient;
+    private GeminiClient geminiClient;
 
     @Override
     public void onEnable() {
         configManager = new ConfigManager(this);
 
-        String apiKey = configManager.getOpenaiApiKey();
+        String apiKey = configManager.getGeminiApiKey();
         if (apiKey == null || apiKey.isBlank()) {
             getLogger().severe("=================================================");
-            getLogger().severe("[McGPT] No OpenAI API key found!");
-            getLogger().severe("[McGPT] Set the OPENAI_API_KEY environment variable");
-            getLogger().severe("[McGPT] or set 'openaiApiKey' in config.yml.");
+            getLogger().severe("[McGPT] No Gemini API key found!");
+            getLogger().severe("[McGPT] Set the GEMINI_API_KEY environment variable");
+            getLogger().severe("[McGPT] or set 'geminiApiKey' in config.yml.");
             getLogger().severe("[McGPT] The plugin will be disabled.");
             getLogger().severe("=================================================");
             Bukkit.getPluginManager().disablePlugin(this);
@@ -40,7 +40,7 @@ public class McgptPlugin extends JavaPlugin {
 
         cooldownManager = new CooldownManager();
         chatContextManager = new ChatContextManager(configManager.getContextMessageCount());
-        openAIClient = new OpenAIClient(configManager, getLogger());
+        geminiClient = new GeminiClient(configManager, getLogger());
 
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
 
@@ -102,7 +102,7 @@ public class McgptPlugin extends JavaPlugin {
         }
 
         final String finalContext = context;
-        openAIClient.ask(message, finalContext)
+        geminiClient.ask(message, finalContext)
                 .thenAccept(reply -> {
                     String cleaned = cleanReply(reply);
                     if (configManager.isEnableLogging()) {
@@ -113,7 +113,7 @@ public class McgptPlugin extends JavaPlugin {
                     broadcastOrSend(player, replyComponent);
                 })
                 .exceptionally(ex -> {
-                    getLogger().warning("[McGPT] OpenAI request failed: " + ex.getMessage());
+                    getLogger().warning("[McGPT] Gemini request failed: " + ex.getMessage());
                     sendMessage(player, "&cSorry, the AI is unavailable right now. Please try again later.");
                     return null;
                 })
@@ -165,5 +165,5 @@ public class McgptPlugin extends JavaPlugin {
     public ConfigManager getConfigManager() { return configManager; }
     public CooldownManager getCooldownManager() { return cooldownManager; }
     public ChatContextManager getChatContextManager() { return chatContextManager; }
-    public OpenAIClient getOpenAIClient() { return openAIClient; }
+    public GeminiClient getGeminiClient() { return geminiClient; }
 }

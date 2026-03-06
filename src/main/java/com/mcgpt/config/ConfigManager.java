@@ -19,7 +19,7 @@ public class ConfigManager {
     private boolean includeChatContext;
     private int contextMessageCount;
     private String apiKeySource;
-    private String openaiApiKey;
+    private String geminiApiKey;
     private String systemPrompt;
     private boolean enableLogging;
     private int maxReplyLength;
@@ -40,7 +40,7 @@ public class ConfigManager {
         triggerKeyword = cfg.getString("triggerKeyword", "!ai");
         broadcastToAll = cfg.getBoolean("broadcastToAll", true);
         aiPrefix = cfg.getString("aiPrefix", "&b[AI]&f ");
-        model = cfg.getString("model", "gpt-4o-mini");
+        model = cfg.getString("model", "gemini-2.0-flash");
         temperature = cfg.getDouble("temperature", 0.7);
         maxTokens = cfg.getInt("maxTokens", 200);
         cooldownSeconds = cfg.getInt("cooldownSeconds", 10);
@@ -49,7 +49,7 @@ public class ConfigManager {
         includeChatContext = cfg.getBoolean("includeChatContext", false);
         contextMessageCount = Math.max(1, cfg.getInt("contextMessageCount", 10));
         apiKeySource = cfg.getString("apiKeySource", "ENV_OR_CONFIG");
-        openaiApiKey = cfg.getString("openaiApiKey", "");
+        geminiApiKey = cfg.getString("geminiApiKey", "");
         systemPrompt = cfg.getString("systemPrompt",
                 "You are a helpful Minecraft assistant. Keep responses concise and relevant to Minecraft.");
         enableLogging = cfg.getBoolean("enableLogging", false);
@@ -57,9 +57,9 @@ public class ConfigManager {
 
         // Resolve API key
         if ("ENV_OR_CONFIG".equalsIgnoreCase(apiKeySource)) {
-            String envKey = System.getenv("OPENAI_API_KEY");
+            String envKey = System.getenv("GEMINI_API_KEY");
             if (envKey != null && !envKey.isBlank()) {
-                openaiApiKey = envKey;
+                geminiApiKey = envKey;
             }
         }
     }
@@ -75,7 +75,7 @@ public class ConfigManager {
     public int getTimeoutSeconds() { return timeoutSeconds; }
     public boolean isIncludeChatContext() { return includeChatContext; }
     public int getContextMessageCount() { return contextMessageCount; }
-    public String getOpenaiApiKey() { return openaiApiKey; }
+    public String getGeminiApiKey() { return geminiApiKey; }
     public String getSystemPrompt() { return systemPrompt; }
     public boolean isEnableLogging() { return enableLogging; }
     public int getMaxReplyLength() { return maxReplyLength; }
