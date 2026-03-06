@@ -23,6 +23,7 @@ public class ConfigManager {
     private String systemPrompt;
     private boolean enableLogging;
     private int maxReplyLength;
+    private int aiConversationHistoryCount;
 
     public ConfigManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -54,6 +55,7 @@ public class ConfigManager {
                 "You are a helpful Minecraft assistant. Keep responses concise and relevant to Minecraft.");
         enableLogging = cfg.getBoolean("enableLogging", false);
         maxReplyLength = cfg.getInt("maxReplyLength", 500);
+        aiConversationHistoryCount = Math.max(1, cfg.getInt("aiConversationHistoryCount", 5));
 
         // Resolve API key
         if ("ENV_OR_CONFIG".equalsIgnoreCase(apiKeySource)) {
@@ -79,4 +81,5 @@ public class ConfigManager {
     public String getSystemPrompt() { return systemPrompt; }
     public boolean isEnableLogging() { return enableLogging; }
     public int getMaxReplyLength() { return maxReplyLength; }
+    public int getAiConversationHistoryCount() { return aiConversationHistoryCount; }
 }

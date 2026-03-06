@@ -45,3 +45,6 @@ enableLogging: false
 
 # Max character length for AI replies (truncate if longer)
 maxReplyLength: 500
+
+# Number of previous !ai exchanges to remember per player (for conversation context)
+aiConversationHistoryCount: 5

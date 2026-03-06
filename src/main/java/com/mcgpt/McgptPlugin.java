@@ -4,6 +4,7 @@ import com.mcgpt.api.GeminiClient;
 import com.mcgpt.command.AiCommand;
 import com.mcgpt.config.ConfigManager;
 import com.mcgpt.listener.ChatListener;
+import com.mcgpt.manager.AiConversationManager;
 import com.mcgpt.manager.ChatContextManager;
 import com.mcgpt.manager.CooldownManager;
 import net.kyori.adventure.text.Component;
@@ -13,6 +14,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
 import java.util.UUID;
 
 public class McgptPlugin extends JavaPlugin {
@@ -20,6 +22,7 @@ public class McgptPlugin extends JavaPlugin {
     private ConfigManager configManager;
     private CooldownManager cooldownManager;
     private ChatContextManager chatContextManager;
+    private AiConversationManager aiConversationManager;
     private GeminiClient geminiClient;
 
     @Override
@@ -40,6 +43,7 @@ public class McgptPlugin extends JavaPlugin {
 
         cooldownManager = new CooldownManager();
         chatContextManager = new ChatContextManager(configManager.getContextMessageCount());
+        aiConversationManager = new AiConversationManager(configManager.getAiConversationHistoryCount());
         geminiClient = new GeminiClient(configManager, getLogger());
 
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
@@ -97,17 +101,22 @@ public class McgptPlugin extends JavaPlugin {
             context = chatContextManager.getContext(uuid);
         }
 
+        // Gather AI conversation history
+        List<String[]> conversationHistory = aiConversationManager.getHistory(uuid);
+
         if (configManager.isEnableLogging()) {
             getLogger().info("[McGPT] " + player.getName() + " asked: " + message);
         }
 
         final String finalContext = context;
-        geminiClient.ask(message, finalContext)
+        geminiClient.ask(message, conversationHistory, finalContext)
                 .thenAccept(reply -> {
                     String cleaned = cleanReply(reply);
                     if (configManager.isEnableLogging()) {
                         getLogger().info("[McGPT] AI replied: " + cleaned);
                     }
+                    // Store this exchange so future requests remember it
+                    aiConversationManager.addExchange(uuid, message, cleaned);
                     Component prefix = translateColors(configManager.getAiPrefix());
                     Component replyComponent = prefix.append(Component.text(cleaned));
                     broadcastOrSend(player, replyComponent);
@@ -165,5 +174,6 @@ public class McgptPlugin extends JavaPlugin {
     public ConfigManager getConfigManager() { return configManager; }
     public CooldownManager getCooldownManager() { return cooldownManager; }
     public ChatContextManager getChatContextManager() { return chatContextManager; }
+    public AiConversationManager getAiConversationManager() { return aiConversationManager; }
     public GeminiClient getGeminiClient() { return geminiClient; }
 }
