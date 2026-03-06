@@ -14,6 +14,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -118,8 +119,21 @@ public class McgptPlugin extends JavaPlugin {
                     // Store this exchange so future requests remember it
                     aiConversationManager.addExchange(uuid, message, cleaned);
                     Component prefix = translateColors(configManager.getAiPrefix());
-                    Component replyComponent = prefix.append(Component.text(cleaned));
-                    broadcastOrSend(player, replyComponent);
+                    // Split into logical lines, then word-wrap each to ~55 chars
+                    String[] logicalLines = cleaned.split("\n");
+                    boolean firstLine = true;
+                    for (String logicalLine : logicalLines) {
+                        List<String> wrappedLines = wrapLine(logicalLine, 55);
+                        for (String wrappedLine : wrappedLines) {
+                            if (wrappedLine.isEmpty()) continue;
+                            if (firstLine) {
+                                broadcastOrSend(player, prefix.append(Component.text(wrappedLine)));
+                                firstLine = false;
+                            } else {
+                                broadcastOrSend(player, Component.text("  " + wrappedLine));
+                            }
+                        }
+                    }
                 })
                 .exceptionally(ex -> {
                     getLogger().warning("[McGPT] Gemini request failed: " + ex.getMessage());
@@ -145,16 +159,57 @@ public class McgptPlugin extends JavaPlugin {
      */
     public String cleanReply(String reply) {
         if (reply == null) return "";
-        // Replace newlines with spaces
-        String cleaned = reply.replace("\n", " ").replace("\r", "").trim();
-        // Strip § and & color codes from AI reply content to prevent injection before truncation
+        // Normalize line endings: \r\n -> \n, \r -> \n
+        String cleaned = reply.replace("\r\n", "\n").replace("\r", "\n");
+        // Collapse runs of 3+ newlines into 2
+        cleaned = cleaned.replaceAll("\n{3,}", "\n\n");
+        // Strip markdown bold (**text** or __text__)
+        cleaned = cleaned.replaceAll("\\*\\*(.+?)\\*\\*", "$1");
+        cleaned = cleaned.replaceAll("__(.+?)__", "$1");
+        // Strip markdown italic (*text* or _text_)
+        cleaned = cleaned.replaceAll("\\*([^*]+?)\\*", "$1");
+        cleaned = cleaned.replaceAll("_([^_]+?)_", "$1");
+        // Strip markdown header prefixes (# Heading)
+        cleaned = cleaned.replaceAll("(?m)^#{1,6}\\s+", "");
+        // Strip § and & color codes from AI reply content to prevent injection
         cleaned = cleaned.replace("§", "").replace("&", "");
+        cleaned = cleaned.trim();
         // Limit length
         int maxLen = configManager.getMaxReplyLength();
         if (cleaned.length() > maxLen) {
             cleaned = cleaned.substring(0, maxLen) + "...";
         }
         return cleaned;
+    }
+
+    /**
+     * Word-wraps a single line of text to the given width, breaking at word boundaries.
+     * If a single word exceeds the width, it is placed on its own line without breaking.
+     */
+    public List<String> wrapLine(String line, int width) {
+        List<String> result = new ArrayList<>();
+        if (line == null || line.isEmpty()) {
+            result.add("");
+            return result;
+        }
+        String remaining = line;
+        while (remaining.length() > width) {
+            int breakAt = remaining.lastIndexOf(' ', width - 1);
+            if (breakAt <= 0) {
+                // No space found within width; include the whole word
+                int nextSpace = remaining.indexOf(' ');
+                if (nextSpace < 0) {
+                    break; // rest of string is one long word
+                }
+                breakAt = nextSpace;
+            }
+            result.add(remaining.substring(0, breakAt));
+            remaining = remaining.substring(breakAt + 1);
+        }
+        if (!remaining.isEmpty()) {
+            result.add(remaining);
+        }
+        return result;
     }
 
     /**
