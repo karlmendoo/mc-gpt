@@ -1,0 +1,50 @@
+# Trigger keyword in chat (include the prefix character)
+triggerKeyword: "!ai"
+
+# Whether AI responses are broadcast to all players or sent only to the sender
+broadcastToAll: true
+
+# Prefix shown before AI responses (supports & color codes)
+aiPrefix: "&b[AI]&f "
+
+# OpenAI model to use
+model: "gpt-4o-mini"
+
+# Temperature for response randomness (0.0 - 2.0)
+temperature: 0.7
+
+# Maximum tokens in AI response
+maxTokens: 200
+
+# Per-player cooldown in seconds
+cooldownSeconds: 10
+
+# Global cooldown in seconds (0 to disable)
+globalCooldownSeconds: 0
+
+# HTTP request timeout in seconds
+timeoutSeconds: 20
+
+# Whether to include recent chat messages as context
+includeChatContext: false
+
+# Number of recent chat messages to include as context
+contextMessageCount: 10
+
+# How to load the API key: "ENV_OR_CONFIG" tries env var first, then config
+apiKeySource: "ENV_OR_CONFIG"
+
+# OpenAI API key (only used if env var OPENAI_API_KEY is not set)
+openaiApiKey: ""
+
+# System prompt sent to OpenAI to set AI personality/rules
+systemPrompt: "You are a helpful Minecraft assistant. Keep responses concise and relevant to Minecraft."
+
+# Whether to log each request and response to console
+logRequests: false
+
+# Request stacking behavior: "REJECT" or "QUEUE"
+requestStackingMode: "REJECT"
+
+# Maximum reply length in characters (truncated if exceeded)
+maxReplyLength: 256
