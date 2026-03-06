@@ -1,6 +1,6 @@
-# McGPT — ChatGPT Integration for Minecraft Paper Servers
+# McGPT — Google Gemini AI Integration for Minecraft Paper Servers
 
-A Minecraft Paper plugin that integrates [OpenAI ChatGPT](https://openai.com/) into your server's chat. Players can ask the AI questions directly in chat or via the `/ai` command.
+A Minecraft Paper plugin that integrates [Google Gemini AI](https://ai.google.dev/) into your server's chat. Players can ask the AI questions directly in chat or via the `/ai` command.
 
 ---
 
@@ -14,7 +14,7 @@ A Minecraft Paper plugin that integrates [OpenAI ChatGPT](https://openai.com/) i
 - **Pending request guard**: Prevents request stacking per player.
 - **Optional chat context**: Include recent chat messages as context for the AI.
 - **Color-coded prefix**: Configurable via `&` codes (e.g., `&b[AI]&f `).
-- **Safe API key handling**: Reads from environment variable `OPENAI_API_KEY` first, then `config.yml`.
+- **Safe API key handling**: Reads from environment variable `GEMINI_API_KEY` first, then `config.yml`.
 
 ---
 
@@ -39,7 +39,7 @@ The output JAR will be in `build/libs/mc-gpt-1.0.0.jar`.
 
 1. Build the plugin as above, or download a release JAR.
 2. Copy `mc-gpt-1.0.0.jar` into your server's `plugins/` folder.
-3. Set your OpenAI API key (see below).
+3. Set your Gemini API key (see below).
 4. Start or restart the server.
 
 ---
@@ -49,7 +49,7 @@ The output JAR will be in `build/libs/mc-gpt-1.0.0.jar`.
 **Recommended — Environment Variable:**
 
 ```bash
-export OPENAI_API_KEY=sk-...
+export GEMINI_API_KEY=AIza...
 ```
 
 Start your server after setting the variable.
@@ -57,7 +57,7 @@ Start your server after setting the variable.
 **Fallback — config.yml:**
 
 ```yaml
-openaiApiKey: "sk-..."
+geminiApiKey: "AIza..."
 ```
 
 > If no API key is found, the plugin will disable itself and print a warning to the console.
@@ -73,16 +73,16 @@ After the first launch, edit `plugins/McGPT/config.yml`:
 | `triggerKeyword` | `!ai` | Chat prefix that triggers the AI |
 | `broadcastToAll` | `true` | Broadcast reply to all players |
 | `aiPrefix` | `&b[AI]&f ` | Prefix before AI replies (supports `&` color codes) |
-| `model` | `gpt-4o-mini` | OpenAI model to use |
+| `model` | `gemini-2.0-flash` | Gemini model to use |
 | `temperature` | `0.7` | Creativity of responses (0.0–2.0) |
-| `maxTokens` | `200` | Maximum tokens per response |
+| `maxTokens` | `200` | Maximum output tokens per response |
 | `cooldownSeconds` | `10` | Per-player cooldown between requests |
 | `globalCooldownSeconds` | `0` | Global cooldown (0 = disabled) |
 | `timeoutSeconds` | `20` | HTTP request timeout |
 | `includeChatContext` | `false` | Include recent chat as context |
 | `contextMessageCount` | `10` | Number of recent messages to include |
 | `apiKeySource` | `ENV_OR_CONFIG` | Key source: check env var first, then config |
-| `openaiApiKey` | `` | API key (if not using env var) |
+| `geminiApiKey` | `` | API key (if not using env var) |
 | `systemPrompt` | *(Minecraft assistant)* | Personality prompt for the AI |
 | `enableLogging` | `false` | Log requests/responses to console |
 | `maxReplyLength` | `500` | Max characters in AI reply (truncated if longer) |
@@ -125,8 +125,8 @@ After the first launch, edit `plugins/McGPT/config.yml`:
 ## Troubleshooting
 
 **Plugin disabled on startup:**
-- Check console for `[McGPT] No OpenAI API key found!`
-- Set `OPENAI_API_KEY` environment variable or `openaiApiKey` in `config.yml`.
+- Check console for `[McGPT] No Gemini API key found!`
+- Set `GEMINI_API_KEY` environment variable or `geminiApiKey` in `config.yml`.
 
 **"AI is unavailable right now" in chat:**
 - Check console for the detailed error (usually an HTTP error or timeout).

@@ -7,8 +7,8 @@ broadcastToAll: true
 # Prefix before AI replies (supports & color codes)
 aiPrefix: "&b[AI]&f "
 
-# OpenAI model to use
-model: "gpt-4o-mini"
+# Gemini model to use
+model: "gemini-2.0-flash"
 
 # Temperature for AI responses
 temperature: 0.7
@@ -31,13 +31,13 @@ includeChatContext: false
 # Number of recent messages to include as context
 contextMessageCount: 10
 
-# Where to read the API key: "ENV_OR_CONFIG" means check env var OPENAI_API_KEY first, fallback to config
+# Where to read the API key: "ENV_OR_CONFIG" means check env var GEMINI_API_KEY first, fallback to config
 apiKeySource: "ENV_OR_CONFIG"
 
-# OpenAI API key (only used if env var OPENAI_API_KEY is not set)
-openaiApiKey: ""
+# Gemini API key (only used if env var GEMINI_API_KEY is not set)
+geminiApiKey: ""
 
-# System prompt sent to OpenAI to set AI personality/rules
+# System prompt sent to Gemini to set AI personality/rules
 systemPrompt: "You are a helpful Minecraft assistant. Keep responses concise and relevant to Minecraft."
 
 # Log requests and responses to console
@@ -45,3 +45,6 @@ enableLogging: false
 
 # Max character length for AI replies (truncate if longer)
 maxReplyLength: 500
+
+# Number of previous !ai exchanges to remember per player (for conversation context)
+aiConversationHistoryCount: 5
